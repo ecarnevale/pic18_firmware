@@ -134,7 +134,7 @@ INTCON = 0;								// disattiva tutti gli interrupt
 INTCONbits.GIE = 1;						// attiva interrupt UART e Timer
 INTCONbits.PEIE = 1;
 
-for (S1=0;S1<10;S1++)					// fa lampeggiare il LED
+for (S1=0;S1<100;S1++)					// fa lampeggiare il LED
  {
   LC=!LC;
   Delay10KTCYx(80);
@@ -187,117 +187,25 @@ TXcount = 0;
 
 while(1)
  {
-  if (INTCONbits.TMR0IF)
-   {
-    ServoCiclo();			// gestione servi
-    LC=1;
-   }
+ // if (INTCONbits.TMR0IF)
+ //  {
+ //   ServoCiclo();			// gestione servi
+ //   LC=1;
+ //  }
   
-  ADCCiclo();  
-  SetDCPWM1(PWM1);			// PWM1 e PWM2
-  SetDCPWM2(PWM2);
+ // ADCCiclo();  
+ // SetDCPWM1(PWM1);			// PWM1 e PWM2
+ // SetDCPWM2(PWM2);
 
-  if(ParsFlag) Parser();	// analisi comandi
- } 
+ // if(ParsFlag) Parser();	// analisi comandi
+ //}
+ // scrittura UART
+ WriteUSART("Greetings from the MuIN!\r\n");
+ }
 }
 
 /* ---------- fime main ---------- */ 
 
-void ServoCiclo (void)
-{
-switch (Ssel)
- {  
-   case 1:
-    if(SGr1)
-     {
-      TMR1H = (65536 - S1*10) >> 8;
-      TMR1L = (65536 - S1*10); 
-      LATBbits.LATB0 = 1;
-  
-      TMR3H = (65536 - S2*10) >> 8;
-      TMR3L = (65536 - S2*10);
-      LATBbits.LATB1 = 1;
-     }     
-   break;
-   
-   case 2:
-	if(SGr1)
-     {
-      TMR1H = (65536 - S3*10) >> 8;
-      TMR1L = (65536 - S3*10); 
-      LATBbits.LATB2 = 1;
-  
-      TMR3H = (65536 - S4*10) >> 8;
-      TMR3L = (65536 - S4*10);
-      LATBbits.LATB3 = 1;     
-	 }
-   break;
-
-   case 3:
-	if(SGr2)
-     {
-      TMR1H = (65536 - S5*10) >> 8;
-      TMR1L = (65536 - S5*10); 
-      LATBbits.LATB4 = 1;
-  
-      TMR3H = (65536 - S6*10) >> 8;
-      TMR3L = (65536 - S6*10);
-      LATBbits.LATB5 = 1;
-	 }     
-   break;
-
-   case 4:
-	if(SGr2)
-     {
-      TMR1H = (65536 - S7*10) >> 8;
-      TMR1L = (65536 - S7*10); 
-      LATBbits.LATB6 = 1;
-  
-      TMR3H = (65536 - S8*10) >> 8;
-      TMR3L = (65536 - S8*10);
-      LATBbits.LATB7 = 1;  
-  	 }  
-   break;
-  }
-
-if (Ssel < 4 ) Ssel++;
-else Ssel = 1;
-
-TMR0H = 0x3C; // 5 ms
-TMR0L = 0xB0; 
-
-T1CONbits.TMR1ON = 1;
-T3CONbits.TMR3ON = 1;
-INTCONbits.TMR0IF = 0;
-}
-
-void ADCCiclo (void)
-{
- SetChanADC( ADC_CH0 );		// legge un canale dell'ADC
- ConvertADC();
- while (BusyADC());
- ADC1 = ReadADC();
-
- SetChanADC( ADC_CH1 );
- ConvertADC();
- while (BusyADC());
- ADC2 = ReadADC();
- 
- SetChanADC( ADC_CH2 );
- ConvertADC();
- while (BusyADC());
- ADC3 = ReadADC();
-
- SetChanADC( ADC_CH3 );
- ConvertADC();
- while (BusyADC());
- ADC4 = ReadADC();
- 
- SetChanADC( ADC_CH4 );
- ConvertADC();
- while (BusyADC());
- ADC5 = ReadADC();
-}
 
 
 void ISRgest(void)		// I.S.R.
@@ -355,278 +263,6 @@ if (PIR1bits.RCIF)
   
   if (TXcount > 7) AT_flag = 1;
  }
-}
-
-void Parser(void)
-{
-char i;
-
-if (strcom[0] = '@')
- {
-  switch (strcom[1])
-  {
-    case 'P':											// comando PWM
-     switch (strcom[2])    
-      {
-       case '1':
-        PWM1 = ((int) strcom[3] << 8) + (unsigned char) strcom[4]; 
-	   break; 
-     
-       case '2':
-        PWM2 = ((int) strcom[3] << 8) + (unsigned char) strcom[4]; 
-	   break;
-
-       case 'R':
-        if (strcom[3] == '1')
-         {
-          if (strcom[4] == '1') LATCbits.LATC0 = 1;
-          else LATCbits.LATC0 = 0;  
-         }
-		if (strcom[3] == '2') 
- 		 {
-		  if (strcom[4] == '1') LATCbits.LATC5 = 1;
-          else LATCbits.LATC5 = 0;  
-         }
-	   break;
-      }
-	break;
-
-	case 'G':											// comando GPIO
-     if (strcom[2] == 'R')								// legge PORTB     
- 	  {
-       GPIO_read();
-	  }
-	 if (strcom[2] == 'W')								// scrive su PORTB     
- 	  {
-       LATB = strcom[3];
-	  }
-    break;
-    
-	case 'M':											// comando MD22
-	 if (strcom[2] == 'M')     
- 	  {
-       MD22mod(strcom[3],strcom[4]);
-	  }
- 
-	 if (strcom[2] == 'R')     
- 	  {
-       MD22(strcom[3],strcom[4],1);
-	  }
-
- 	 if (strcom[2] == 'L')     
- 	  {
-       MD22(strcom[3],strcom[4],2);
-	  }
-    break;
-   
-  	case 'I':											// comando I2C write
-	 I2CW();
-    break;
-
-    case 'L':											// comando I2C read
-	 I2CR();
-    break;
-      
-   	case 'F':											// Sonar
-     if (strcom[2] ==  '1')								// ping
-      {
-       SRFping(strcom[3]);
-	  }
- 
-     if (strcom[2] ==  'A')								// change address
-      {
-       SRF_Ad_Ch(strcom[3],strcom[4]);	
-	  }
-
-     if (strcom[2] ==  '0')								// legge
-	  {	
- 		SRFread(strcom[3]);
-        itoa(SRFdist,str); 
-    	TXREG = '@';
-	 	while(!TXSTAbits.TRMT); 
-        TXREG = 'F';
-	 	while(!TXSTAbits.TRMT); 
-        TXREG = str[0];
-	 	while(!TXSTAbits.TRMT); 
-     	TXREG = str[1];
-	 	while(!TXSTAbits.TRMT); 
-	    TXREG = str[2];
-	 	while(!TXSTAbits.TRMT); 
-     	TXREG = str[3];
-	 	while(!TXSTAbits.TRMT);
-		TXREG = '#';
-	 	while(!TXSTAbits.TRMT); 
-      }  
-    break;
-   
-    case 'C':											// Bussola
-     if (strcom[2]== 1)    								// CMPS03
-      {
-        CMPS03(strcom[3]);
-		itoa(Compass,str); 
-    	TXREG = '@';
-	 	while(!TXSTAbits.TRMT); 
-       	TXREG = 'C';
-	 	while(!TXSTAbits.TRMT); 
- 		TXREG = str[0];
-	 	while(!TXSTAbits.TRMT); 
-     	TXREG = str[1];
-	 	while(!TXSTAbits.TRMT); 
-	    TXREG = str[2];
-	 	while(!TXSTAbits.TRMT); 
-     	TXREG = str[3];
-	 	while(!TXSTAbits.TRMT);
-		TXREG = '#';
-	 	while(!TXSTAbits.TRMT); 
-	  }  
-     
-     if (strcom[2] ==  'A')								// change address
-      {
-       CPMS03_Ad_Ch(strcom[3],strcom[4]);	
-	  }
-
-	break;
-
-	case 'A':											// ADC
-     TXREG = '@';
-	 while(!TXSTAbits.TRMT); 
-	 TXREG = 'A';
-	 while(!TXSTAbits.TRMT); 
-
-     itoa(ADC1,str); 
-     TXREG = str[0];
-	 while(!TXSTAbits.TRMT); 
-     TXREG = str[1];
-	 while(!TXSTAbits.TRMT); 
-     TXREG = str[2];
-	 while(!TXSTAbits.TRMT); 
-     TXREG = str[3];
-	 while(!TXSTAbits.TRMT); 
-    
-     itoa(ADC2,str); 
-     TXREG = str[0];
-	 while(!TXSTAbits.TRMT); 
-     TXREG = str[1];
-	 while(!TXSTAbits.TRMT); 
-     TXREG = str[2];
-	 while(!TXSTAbits.TRMT); 
-     TXREG = str[3];
-	 while(!TXSTAbits.TRMT); 
-
-     itoa(ADC3,str); 
-     TXREG = str[0];
-	 while(!TXSTAbits.TRMT); 
-     TXREG = str[1];
-	 while(!TXSTAbits.TRMT); 
-     TXREG = str[2];
-	 while(!TXSTAbits.TRMT); 
-     TXREG = str[3];
-	 while(!TXSTAbits.TRMT); 
-     
-     itoa(ADC4,str); 
-     TXREG = str[0];
-	 while(!TXSTAbits.TRMT); 
-     TXREG = str[1];
-	 while(!TXSTAbits.TRMT); 
-     TXREG = str[2];
-	 while(!TXSTAbits.TRMT); 
-     TXREG = str[3];
-	 while(!TXSTAbits.TRMT); 
-     
-     itoa(ADC5,str); 
-     TXREG = str[0];
-	 while(!TXSTAbits.TRMT); 
-     TXREG = str[1];
-	 while(!TXSTAbits.TRMT); 
-     TXREG = str[2];
-	 while(!TXSTAbits.TRMT); 
-     TXREG = str[3];
-	 while(!TXSTAbits.TRMT); 
-     
-     TXREG = '#';
-	 while(!TXSTAbits.TRMT); 
-
-    break;
-
-   	case 'S':											// comando Servo
-     switch (strcom[2])    
-      {
-       case '1':
-        S1 = ((int) strcom[3] << 8) + (unsigned char) strcom[4]; 
-	   break;
- 
-       case '2':
-        S2 = ((int) strcom[3] << 8) + (unsigned char) strcom[4]; 
-       break;
-
-       case '3':
-        S3 = ((int) strcom[3] << 8) + (unsigned char) strcom[4]; 
-       break;
-
-       case '4':
-        S4 = ((int) strcom[3] << 8) + (unsigned char) strcom[4]; 
-       break;
-
-       case '5':
-        S5 = ((int) strcom[3] << 8) + (unsigned char) strcom[4]; 
-       break;
-  
-       case '6':
-        S6 = ((int) strcom[3] << 8) + (unsigned char) strcom[4]; 
-       break;
-
- 	   case '7':
-        S7 = ((int) strcom[3] << 8) + (unsigned char) strcom[4]; 
-       break;
-
-	   case '8':
-        S8 = ((int) strcom[3] << 8) + (unsigned char) strcom[4]; 
-       break;
-      }
-     break;	
-
-     case 'E':											// Scrive EEPROM
-      EEPROMWRITE(strcom[2] ,0x00);
- 	  EEPROMWRITE(strcom[3] ,0x01); 
- 	  EEPROMWRITE(strcom[4] ,0x02); 
-	  EEPROMWRITE(strcom[5] ,0x03); 
-	  EEPROMWRITE(strcom[6] ,0x04);  
-      
-	  LC = 1;
-      for (S1=0;S1<4;S1++)								// fa lampeggiare il LED
- 	   {
-  		LC=!LC;
-        Delay10KTCYx(250);
-      }
-     break;
-   
-     case 'Z':											// Legge EEPROM
-       	TXREG = '@';
-	 	while(!TXSTAbits.TRMT); 
-       	TXREG = 'I';
-	 	while(!TXSTAbits.TRMT); 
- 		
-		TXREG = EEPROMREAD(0x00);
-	 	while(!TXSTAbits.TRMT);
-	 	TXREG = EEPROMREAD(0x01);
-	 	while(!TXSTAbits.TRMT);
-		TXREG = EEPROMREAD(0x02);
-	 	while(!TXSTAbits.TRMT);
-		TXREG = EEPROMREAD(0x03);
-	 	while(!TXSTAbits.TRMT);
-		TXREG = EEPROMREAD(0x04);
-	 	while(!TXSTAbits.TRMT);
-
-		TXREG = '#';
-	 	while(!TXSTAbits.TRMT); 
-     break;
-
-   break;
-  }
- }
-for (i=0;i<10;i++) strcom[i] = 0;
-ParsFlag = 0;
-TXcount = 0;
 }
 
 void SRFping(unsigned char ADDS)
@@ -809,7 +445,8 @@ void init_sys(void)
 			USART_ASYNCH_MODE &
 			USART_EIGHT_BIT &
 			USART_CONT_RX &
-			USART_BRGH_HIGH, tmp2);	
+			USART_BRGH_HIGH, 1041);	
+//			USART_BRGH_HIGH, tmp2);	
 /*
 Con BRGH = 1, BRG = 16 (risoluzione a 16 bit)
 1200   = 8332

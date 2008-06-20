@@ -34,7 +34,8 @@
 #pragma config OSC		= HSPLL			// Usare con quarzo da 10MHz e PPL 4x
 
 
-#define LC	PORTAbits.RA4				// Led 
+#define LC	PORTAbits.RA4				// Led
+int S1;
 
 
 void main()
@@ -42,6 +43,7 @@ void main()
 
 // interrupt
 INTCON = 0;						// all Interrupts disabled
+
 
 for (S1=0;S1<100;S1++)					// LED will blink
  {
