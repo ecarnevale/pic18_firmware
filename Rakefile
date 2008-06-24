@@ -9,10 +9,17 @@ include FileUtils
 #wine /home/emanuel/.wine/drive_c/mcc18/bin/mcc18 -p=18F2520 "onewheel.c" -fo="onewheel.o"
 #wine /home/emanuel/.wine/drive_c/mcc18/bin/mplink.exe 18f2520.lkr onewheel.o /o onewheel.out /l"/home/emanuel/.wine/drive_c/mcc18\lib"
 
-CLEAN.include ["dist/","*.o", "*.cof", "*.err", "*.map", "*.hex", "*.mcp", "*.mcs", "*.mcw", "*.cod", "*.out", "*.lst"]
 
-MCC_BIN = "wine /home/emanuel/.wine/drive_c/mcc18/bin/"
-MCC_LIB = "/home/emanuel/.wine/drive_c/mcc18/bin/lib/"
+CLEAN.include ["dist/", "*.o", "*.cof", "*.err", "*.map", "*.hex", "*.mcp", "*.mcs", "*.mcw", "*.cod", "*.out", "*.lst"] 
+
+case PLATFORM when /win32/
+  MCC_BIN = ""
+  MCC_LIB = "C:\\MCC18\\lib"
+else
+  MCC_BIN = "wine /home/emanuel/.wine/drive_c/mcc18/bin/"
+  MCC_LIB = "/home/emanuel/.wine/drive_c/mcc18/bin/lib/"
+end
+
 COMPILER = "mcc18.exe"
 LINKER = "mplink.exe"
 PIC="18F2520"
